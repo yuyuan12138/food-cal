@@ -1,15 +1,20 @@
-import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, CheckCircle } from 'lucide-react';
+import { useDailyLogStore } from '@/store/dailyLogStore';
 import { SearchBar } from '@/components/SearchBar';
 import { FoodModal } from '@/components/FoodModal';
 import { FoodGrid } from '@/components/FoodCard';
-import { Food, MealType } from '@/types';
+import { Food, MealType, getTodayDate } from '@/types';
 import { foods } from '@/data/foods';
 
 export function HomePage() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [lastAddedFood, setLastAddedFood] = useState<string>('');
+
+  const { addEntry } = useDailyLogStore();
 
   const handleSelectFood = (food: Food) => {
     setSelectedFood(food);
@@ -23,9 +28,23 @@ export function HomePage() {
     });
   };
 
-  const handleAddFood = (_food: Food, _meal: MealType, _servings: number) => {
+  const handleAddFood = (food: Food, meal: MealType, servings: number) => {
+    // Add food to the log for today's date
+    addEntry(food, meal, servings, getTodayDate());
+    setLastAddedFood(food.name);
+    setShowSuccess(true);
     setIsFoodModalOpen(false);
+
+    // Hide success message after 3 seconds
+    setTimeout(() => setShowSuccess(false), 3000);
   };
+
+  // Clear success message when changing views
+  useEffect(() => {
+    if (!showSuccess) return;
+    const timer = setTimeout(() => setShowSuccess(false), 3000);
+    return () => clearTimeout(timer);
+  }, [showSuccess]);
 
   // Show popular foods on initial load
   const popularFoods = foods.filter((f) =>
@@ -33,7 +52,19 @@ export function HomePage() {
   ).slice(0, 9);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 to-white relative">
+      {/* Success Notification */}
+      {showSuccess && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-5">
+          <div className="bg-primary text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-medium">
+              Added <strong>{lastAddedFood}</strong> to your log!
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-8">
