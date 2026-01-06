@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Activity, Target, TrendingUp } from 'lucide-react';
+import { Activity, Target, TrendingUp, AlertCircle } from 'lucide-react';
 import { CalorieNeeds, calculateBMR, calculateTDEE, calculateMacros } from '@/types';
 import { useDailyLogStore } from '@/store/dailyLogStore';
 
@@ -29,15 +29,27 @@ export function CalculatorModal({ open, onClose }: CalculatorModalProps) {
   const [gender, setGender] = useState<'male' | 'female' | 'other'>(profile.gender || 'male');
   const [activityLevel, setActivityLevel] = useState(profile.activityLevel);
   const [calculatedNeeds, setCalculatedNeeds] = useState<CalorieNeeds | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleCalculate = () => {
     const w = parseFloat(weight);
     const h = parseFloat(height);
     const a = parseFloat(age);
 
-    if (!w || !h || !a) return;
+    // Clear any previous error
+    setErrorMessage('');
 
-    const bmr = calculateBMR(w, h, a, gender);
+    // Validate inputs - use default values if not provided
+    const finalWeight = w || 70; // Default 70kg
+    const finalHeight = h || 170; // Default 170cm
+    const finalAge = a || 30; // Default 30 years
+
+    // Show warning if using defaults
+    if (!w || !h || !a) {
+      setErrorMessage('Some fields were empty. Using default values: 70kg, 170cm, 30 years.');
+    }
+
+    const bmr = calculateBMR(finalWeight, finalHeight, finalAge, gender);
     const tdee = calculateTDEE(bmr, activityLevel);
 
     // Recommended daily intake: TDEE for maintenance, or TDEE - 500 for weight loss
@@ -49,6 +61,11 @@ export function CalculatorModal({ open, onClose }: CalculatorModalProps) {
       recommended: Math.round(recommended),
       macros: calculateMacros(recommended),
     });
+
+    // Update input fields with used values (defaults or actual)
+    if (!w) setWeight(finalWeight.toString());
+    if (!h) setHeight(finalHeight.toString());
+    if (!a) setAge(finalAge.toString());
   };
 
   const handleApplyRecommendation = () => {
@@ -159,6 +176,13 @@ export function CalculatorModal({ open, onClose }: CalculatorModalProps) {
                 </SelectContent>
               </Select>
             </div>
+
+            {errorMessage && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span className="text-sm">{errorMessage}</span>
+              </div>
+            )}
 
             <Button onClick={handleCalculate} className="w-full" size="lg">
               Calculate My Needs
