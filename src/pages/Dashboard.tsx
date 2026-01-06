@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calculator, Calendar } from 'lucide-react';
 import { useDailyLogStore } from '@/store/dailyLogStore';
 import { CalorieProgress } from '@/components/CalorieProgress';
@@ -27,6 +27,7 @@ export function Dashboard() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [isFoodModalOpen, setIsFoodModalOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const searchRef = useRef<{ focus: () => void }>(null);
 
   const summary = getDailySummary(selectedDate);
 
@@ -38,8 +39,9 @@ export function Dashboard() {
 
   const handleAddClick = (meal: MealType) => {
     setSelectedMeal(meal);
-    // Scroll to search bar
-    document.getElementById('food-search')?.scrollIntoView({ behavior: 'smooth' });
+    // Focus on search input and scroll to it
+    searchRef.current?.focus();
+    document.getElementById('food-search')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const handleSelectFood = (food: Food) => {
@@ -122,6 +124,7 @@ export function Dashboard() {
         {/* Food Search */}
         <div id="food-search">
           <SearchBar
+            ref={searchRef}
             foods={foods}
             onSelectFood={handleSelectFood}
             recentSearches={recentSearches}

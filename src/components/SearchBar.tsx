@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Search, X, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,15 +14,14 @@ interface SearchBarProps {
   onAddRecent?: (query: string) => void;
 }
 
-export function SearchBar({
-  foods,
-  onSelectFood,
-  recentSearches = [],
-  onAddRecent,
-}: SearchBarProps) {
+export const SearchBar = forwardRef<
+  { focus: () => void },
+  SearchBarProps
+>(({ foods, onSelectFood, recentSearches = [], onAddRecent }, forwardedRef) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Food[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Perform the actual search logic
   const performSearch = useCallback((searchQuery: string) => {
@@ -80,6 +79,14 @@ export function SearchBar({
     [performSearch]
   );
 
+  // Expose focus method via ref
+  useImperativeHandle(forwardedRef, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+      setIsFocused(true);
+    }
+  }), []);
+
   useEffect(() => {
     debouncedSearch(query);
   }, [query, debouncedSearch]);
@@ -116,6 +123,7 @@ export function SearchBar({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           className="pl-10 pr-10 h-12 text-base"
+          ref={inputRef}
         />
         {query && (
           <Button
@@ -201,4 +209,6 @@ export function SearchBar({
       )}
     </div>
   );
-}
+});
+
+SearchBar.displayName = 'SearchBar';
