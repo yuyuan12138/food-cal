@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, X, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -24,8 +24,8 @@ export function SearchBar({
   const [results, setResults] = useState<Food[]>([]);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Debounced search function
-  const searchFoods = debounce((searchQuery: string) => {
+  // Perform the actual search logic
+  const performSearch = useCallback((searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
       return;
@@ -72,11 +72,17 @@ export function SearchBar({
     if (searchQuery.trim() && onAddRecent) {
       onAddRecent(searchQuery);
     }
-  }, 300);
+  }, [foods, onAddRecent]);
+
+  // Debounced search function - stable reference with useMemo
+  const debouncedSearch = useMemo(
+    () => debounce(performSearch, 300),
+    [performSearch]
+  );
 
   useEffect(() => {
-    searchFoods(query);
-  }, [query]);
+    debouncedSearch(query);
+  }, [query, debouncedSearch]);
 
   const handleSelectFood = (food: Food) => {
     onSelectFood(food);
@@ -93,7 +99,7 @@ export function SearchBar({
 
   const handleRecentSearch = (recentQuery: string) => {
     setQuery(recentQuery);
-    searchFoods(recentQuery);
+    performSearch(recentQuery);
   };
 
   const showDropdown = isFocused && (query.trim() || (recentSearches.length > 0 && !query));

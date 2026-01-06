@@ -253,7 +253,7 @@ export function CalculatorModal({ open, onClose }: CalculatorModalProps) {
                 <Input
                   type="number"
                   placeholder="2000"
-                  defaultValue={profile.goals.dailyCalorieTarget}
+                  value={profile.goals.dailyCalorieTarget}
                   onChange={(e) => {
                     const value = parseInt(e.target.value);
                     if (value && value > 0) {

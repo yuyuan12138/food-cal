@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Food, MealType } from '@/types';
 import {
   Dialog,
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Flame, Drumstick, Wheat, Droplet, Leaf } from 'lucide-react';
+import { useDailyLogStore } from '@/store/dailyLogStore';
 
 interface FoodModalProps {
   food: Food | null;
@@ -21,8 +22,15 @@ interface FoodModalProps {
 }
 
 export function FoodModal({ food, open, onClose, onAdd }: FoodModalProps) {
+  const { selectedMeal: storeSelectedMeal } = useDailyLogStore();
   const [servings, setServings] = useState(1);
-  const [selectedMeal, setSelectedMeal] = useState<MealType>('snack');
+  const [selectedMeal, setSelectedMeal] = useState<MealType>(storeSelectedMeal || 'snack');
+
+  // Reset form when food changes, using store's selectedMeal as default
+  useEffect(() => {
+    setServings(1);
+    setSelectedMeal(storeSelectedMeal || 'snack');
+  }, [food, storeSelectedMeal]);
 
   if (!food) return null;
 
